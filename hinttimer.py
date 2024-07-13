@@ -130,7 +130,7 @@ class CountdownTimer:
                 self.timer_id = None
             self.update_timer()
         else:
-            self.draw_time()
+            self.draw_label(self.timer, self.format_time(), 'digital-7-mono.ttf', self.timer_font_size, 30)
 
     def subtract_time(self, event=None):
         self.time_left = max(0, self.time_left - 5 * 60)
@@ -140,7 +140,7 @@ class CountdownTimer:
                 self.timer_id = None
             self.update_timer()
         else:
-            self.draw_time()
+            self.draw_label(self.timer, self.format_time(), 'digital-7-mono.ttf', self.timer_font_size, 30)
 
     def toggle_timer(self, event=None):
         if self.paused:
