@@ -1,5 +1,5 @@
 import tkinter as tk
-import cv2
+import vlc
 from PIL import Image, ImageTk, ImageFont, ImageDraw
 
 class VideoPlayer:
@@ -8,57 +8,61 @@ class VideoPlayer:
         self.video_path = video_path
         self.callback = callback
         self.window.attributes("-fullscreen", True)
-        self.cap = cv2.VideoCapture(self.video_path)
-
+        
         self.frame = tk.Frame(window, bg='black')
         self.frame.pack(expand=True, fill=tk.BOTH)
         self.frame.bind('<Configure>', self.on_frame_configure)
-
+        
         self.label = tk.Label(self.frame, bg='black')
         self.label.pack(expand=True, fill=tk.BOTH)
-
+        
+        self.instance = vlc.Instance()
+        self.player = self.instance.media_player_new()
+        
         self.playing = False
-        self.frame_width = self.frame_height = 1  # Initial size to avoid division by zero
-
+        
         # Bind keys
         self.window.bind('<space>', self.start_video)
         self.window.bind('<Escape>', self.quit)
         self.window.bind('<k>', self.skip_to_end)
-
+        
     def skip_to_end(self, event=None):
         if self.playing:
-            total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames - 1)
-            self.play_video()
-
+            media = self.player.get_media()
+            total_duration = media.get_duration()
+            self.player.set_time(total_duration - 1000)  # Skip to 1 second before end
+    
     def on_frame_configure(self, event):
         self.frame_width = event.width
         self.frame_height = event.height
-
+        self.update_video_geometry()
+    
+    def update_video_geometry(self):
+        if self.player.get_hwnd():
+            self.player.set_xwindow(self.label.winfo_id())  # For Linux, use set_xwindow instead of set_hwnd
+            self.player.video_set_scale(0)
+            self.player.video_set_aspect_ratio(f"{self.frame_width}:{self.frame_height}")
+    
     def start_video(self, event=None):
         if not self.playing:
             self.playing = True
-            self.play_video()
-
-    def play_video(self):
+            media = self.instance.media_new(self.video_path)
+            self.player.set_media(media)
+            self.update_video_geometry()
+            self.player.play()
+            self.check_video_end()
+    
+    def check_video_end(self):
         if self.playing:
-            ret, frame = self.cap.read()
-            if ret:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame = cv2.resize(frame, (self.frame_width, self.frame_height))  # Resize frame
-                image = Image.fromarray(frame)
-                image = ImageTk.PhotoImage(image)
-                self.label.config(image=image)
-                self.label.image = image
-                self.window.after(10, self.play_video)
-            else:
-                self.cap.release()
+            if self.player.get_state() == vlc.State.Ended:
                 self.playing = False
                 self.callback()
-
+            else:
+                self.window.after(1000, self.check_video_end)
+    
     def quit(self, event=None):
         self.playing = False
-        self.cap.release()
+        self.player.stop()
         self.window.quit()
 
 class CountdownTimer:
