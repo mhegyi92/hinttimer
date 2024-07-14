@@ -1,5 +1,65 @@
 import tkinter as tk
+import cv2
 from PIL import Image, ImageTk, ImageFont, ImageDraw
+
+class VideoPlayer:
+    def __init__(self, window, video_path, callback):
+        self.window = window
+        self.video_path = video_path
+        self.callback = callback
+        self.window.attributes("-fullscreen", True)
+        self.cap = cv2.VideoCapture(self.video_path)
+
+        self.frame = tk.Frame(window, bg='black')
+        self.frame.pack(expand=True, fill=tk.BOTH)
+        self.frame.bind('<Configure>', self.on_frame_configure)
+
+        self.label = tk.Label(self.frame, bg='black')
+        self.label.pack(expand=True, fill=tk.BOTH)
+
+        self.playing = False
+        self.frame_width = self.frame_height = 1  # Initial size to avoid division by zero
+
+        # Bind keys
+        self.window.bind('<space>', self.start_video)
+        self.window.bind('<Escape>', self.quit)
+        self.window.bind('<k>', self.skip_to_end)
+
+    def skip_to_end(self, event=None):
+        if self.playing:
+            total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, total_frames - 1)
+            self.play_video()
+
+    def on_frame_configure(self, event):
+        self.frame_width = event.width
+        self.frame_height = event.height
+
+    def start_video(self, event=None):
+        if not self.playing:
+            self.playing = True
+            self.play_video()
+
+    def play_video(self):
+        if self.playing:
+            ret, frame = self.cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = cv2.resize(frame, (self.frame_width, self.frame_height))  # Resize frame
+                image = Image.fromarray(frame)
+                image = ImageTk.PhotoImage(image)
+                self.label.config(image=image)
+                self.label.image = image
+                self.window.after(10, self.play_video)
+            else:
+                self.cap.release()
+                self.playing = False
+                self.callback()
+
+    def quit(self, event=None):
+        self.playing = False
+        self.cap.release()
+        self.window.quit()
 
 class CountdownTimer:
     def __init__(self, window, seconds):
@@ -172,10 +232,12 @@ class CountdownTimer:
             self.window.after_cancel(self.timer_id)
         self.window.quit()    
 
-def main():
-    window = tk.Tk()
+def start():
+    for widget in window.winfo_children():
+        widget.destroy()
     CountdownTimer(window, 10)
-    window.mainloop()
 
 if __name__ == "__main__":
-    main()
+    window = tk.Tk()
+    VideoPlayer(window, "sample-5s.mp4", start )    
+    window.mainloop()
