@@ -27,14 +27,10 @@ class VideoPlayer:
         self.window.bind('<Escape>', self.quit)
         self.window.bind('<k>', self.skip_to_end)
 
-        # VLC player
-        args = []
-        args.append('--no-xlib')
-        args.append('--vout=mmal_vout')
-        
-        self.instance = vlc.Instance(args)
+        # VLC player    
+        self.instance = vlc.Instance()
         self.player = self.instance.media_player_new()
-
+        
     def skip_to_end(self, event=None):
         if self.playing:
             self.player.set_position(0.99)  # Skip to the end (close to 100%)
@@ -53,7 +49,7 @@ class VideoPlayer:
         if not self.player.get_media():
             media = self.instance.media_new(self.video_path)
             self.player.set_media(media)
-            self.player.set_hwnd(self.label.winfo_id())  # Ensure correct window ID is passed
+            self.player.set_xwindow(self.label.winfo_id())
             self.player.play()
             self.window.after(100, self.check_status)
         else:
