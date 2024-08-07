@@ -2,6 +2,9 @@ import tkinter as tk
 import vlc
 from PIL import Image, ImageTk, ImageFont, ImageDraw
 
+import tkinter as tk
+import vlc
+
 class VideoPlayer:
     def __init__(self, window, video_path, callback):
         self.window = window
@@ -25,7 +28,7 @@ class VideoPlayer:
         self.window.bind('<k>', self.skip_to_end)
 
         # VLC player
-        self.instance = vlc.Instance()
+        self.instance = vlc.Instance('--vout=x11')  # Try x11 or another compatible output module
         self.player = self.instance.media_player_new()
 
     def skip_to_end(self, event=None):
@@ -46,7 +49,7 @@ class VideoPlayer:
         if not self.player.get_media():
             media = self.instance.media_new(self.video_path)
             self.player.set_media(media)
-            self.player.set_hwnd(self.label.winfo_id())
+            self.player.set_hwnd(self.label.winfo_id())  # Ensure correct window ID is passed
             self.player.play()
             self.window.after(100, self.check_status)
         else:
