@@ -1,3 +1,2 @@
-numpy==2.0.0
-opencv-python==4.10.0.84
 pillow==10.4.0
+python-vlc==3.0.20123
