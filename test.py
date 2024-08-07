@@ -28,7 +28,11 @@ class VideoPlayer:
         self.window.bind('<k>', self.skip_to_end)
 
         # VLC player
-        self.instance = vlc.Instance('--vout=x11')  # Try x11 or another compatible output module
+        args = []
+        args.append('--no-xlib')
+        args.append('--vout=mmal_vout')
+        
+        self.instance = vlc.Instance(args)
         self.player = self.instance.media_player_new()
 
     def skip_to_end(self, event=None):
